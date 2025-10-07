@@ -73,13 +73,19 @@ func (d *Onedrive) refreshToken() error {
 }
 
 func (d *Onedrive) _refreshToken() error {
-	if d.ref != nil {
-		err := d.ref._refreshToken()
+	d.mutex.Lock()
+	ref := d.ref
+	d.mutex.Unlock()
+	
+	if ref != nil {
+		err := ref._refreshToken()
 		if err != nil {
 			return err
 		}
-		d.AccessToken = d.ref.AccessToken
-		d.RefreshToken = d.ref.RefreshToken
+		d.mutex.Lock()
+		d.AccessToken = ref.AccessToken
+		d.RefreshToken = ref.RefreshToken
+		d.mutex.Unlock()
 		return nil
 	}
 
@@ -146,10 +152,12 @@ func (d *Onedrive) _refreshToken() error {
 func (d *Onedrive) Request(url string, method string, callback base.ReqCallback, resp interface{}) ([]byte, error) {
 	req := base.RestyClient.R()
 
+	d.mutex.Lock()
 	token := d.AccessToken
 	if d.ref != nil {
 		token = d.ref.AccessToken
 	}
+	d.mutex.Unlock()
 
 	req.SetHeader("Authorization", "Bearer "+token)
 	if callback != nil {

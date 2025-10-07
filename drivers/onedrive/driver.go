@@ -37,9 +37,14 @@ func (d *Onedrive) Init(ctx context.Context) error {
 	if d.ChunkSize < 1 {
 		d.ChunkSize = 5
 	}
-	if d.ref != nil {
+	d.mutex.Lock()
+	hasRef := d.ref != nil
+	if hasRef {
 		d.AccessToken = d.ref.AccessToken
 		d.RefreshToken = d.ref.RefreshToken
+	}
+	d.mutex.Unlock()
+	if hasRef {
 		return nil
 	}
 	return d.refreshToken()
@@ -47,14 +52,18 @@ func (d *Onedrive) Init(ctx context.Context) error {
 
 func (d *Onedrive) InitReference(refStorage driver.Driver) error {
 	if ref, ok := refStorage.(*Onedrive); ok {
+		d.mutex.Lock()
 		d.ref = ref
+		d.mutex.Unlock()
 		return nil
 	}
 	return errs.NotSupport
 }
 
 func (d *Onedrive) Drop(ctx context.Context) error {
+	d.mutex.Lock()
 	d.ref = nil
+	d.mutex.Unlock()
 	return nil
 }
 
