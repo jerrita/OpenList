@@ -11,7 +11,6 @@ output/
 *.dylib
 *.db
 *.bin
-/OpenList
 
 # Test binary, built with `go test -c`
 *.test
